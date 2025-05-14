@@ -13,11 +13,10 @@ from sklearn.metrics import confusion_matrix
 LR = joblib.load("lr_model.pkl")
 DT = joblib.load('dt_model.pkl')
 GB = joblib.load('gb_model.pkl')
-RF = joblib.load("rf_model.pkl")
+RF = joblib.load("rf_model_compressed.pkl")  # <-- Updated model name
 vectorizer = joblib.load('vectorizer.pkl')
 
 # Preprocessing
-
 def wordopt(text):
     text = text.lower()
     text = re.sub('$.*?$', '', text)
