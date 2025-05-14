@@ -16,10 +16,10 @@ from lime.lime_text import LimeTextExplainer
 LR = joblib.load("lr_model.pkl")
 DT = joblib.load('dt_model.pkl')
 GB = joblib.load('gb_model.pkl')
-RF = joblib.load("rf_model_compressed.pkl")  # Updated name
+RF = joblib.load("rf_model_compressed.pkl")  # Corrected name
 vectorizer = joblib.load('vectorizer.pkl')
 
-# Text preprocessing
+# Preprocessing
 def wordopt(text):
     text = text.lower()
     text = re.sub('$.*?$', '', text)
@@ -42,7 +42,7 @@ def predict_all_models(news):
     return results
 
 # Streamlit UI
-st.title("📰 Fake News Detection App with SHAP/LIME")
+st.title("📰 Fake News Detection App with SHAP & LIME")
 st.write("Enter the news text below and find out if it's **real** or **fake**.")
 
 user_input = st.text_area("News Article Text")
@@ -54,27 +54,30 @@ if st.button("Predict"):
         predictions = predict_all_models(user_input)
         for model, result in predictions.items():
             st.write(f"**{model}**: {result}")
-        
+
         # SHAP Explanation
         if st.checkbox("Show SHAP Explanation (Logistic Regression)"):
-            st.write("### SHAP Summary Plot")
+            st.subheader("SHAP Force Plot (HTML Rendered)")
             clean_text = wordopt(user_input)
             vector_input = vectorizer.transform([clean_text])
 
-            explainer = shap.LinearExplainer(LR, vectorizer.transform(["sample"]), feature_perturbation="interventional")
+            explainer = shap.LinearExplainer(LR, vectorizer.transform(["sample text"]), feature_perturbation="interventional")
             shap_values = explainer.shap_values(vector_input)
 
-            # Convert to dense array
-            input_array = vector_input.toarray()
-
-            # SHAP Summary Plot
-            fig = plt.figure()
-            shap.summary_plot(shap_values, input_array, feature_names=vectorizer.get_feature_names_out(), show=False)
-            st.pyplot(fig)
+            # SHAP force plot rendered as HTML
+            shap.initjs()
+            force_plot = shap.force_plot(
+                explainer.expected_value,
+                shap_values[0],
+                feature_names=vectorizer.get_feature_names_out(),
+                matplotlib=False
+            )
+            html_shap = f"<head>{shap.getjs()}</head><body>{force_plot.html()}</body>"
+            components.html(html_shap, height=400)
 
         # LIME Explanation
         if st.checkbox("Show LIME Explanation (Logistic Regression)"):
-            st.write("### LIME Text Explanation")
+            st.subheader("LIME Explanation")
             lime_explainer = LimeTextExplainer(class_names=["Fake", "Not Fake"])
             lime_exp = lime_explainer.explain_instance(
                 user_input,
@@ -83,7 +86,7 @@ if st.button("Predict"):
             )
             components.html(lime_exp.as_html(), height=600, scrolling=True)
 
-# Visualization (optional static confusion matrix example)
+# Confusion matrix
 if st.checkbox("Show Example Confusion Matrix"):
     y_true = [0, 1, 0, 1, 1, 0]
     y_pred = [0, 1, 1, 1, 1, 0]
