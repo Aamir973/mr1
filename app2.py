@@ -70,7 +70,8 @@ if st.button("Predict"):
         # LIME Explanation using matplotlib
         if st.checkbox("Show LIME Explanation (Matplotlib)"):
             st.subheader("LIME Explanation (Bar Chart)")
-            lime_explainer = LimeTextExplainer(class_names=["Fake", "Not Fake"])            lime_exp = lime_explainer.explain_instance(
+            lime_explainer = LimeTextExplainer(class_names=["Fake", "Not Fake"])
+            lime_exp = lime_explainer.explain_instance(
                 user_input,
                 lambda x: LR.predict_proba(vectorizer.transform([wordopt(i) for i in x])),
                 num_features=10
@@ -78,5 +79,4 @@ if st.button("Predict"):
 
             fig = lime_exp.as_pyplot_figure()
             st.pyplot(fig)
-
 
