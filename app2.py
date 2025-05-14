@@ -1,4 +1,4 @@
-import streamlit as st  # type: ignore
+import streamlit as st
 import joblib
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -7,16 +7,19 @@ import re
 import string
 import shap
 import lime
+import numpy as np
 from sklearn.metrics import confusion_matrix
+import streamlit.components.v1 as components
+from lime.lime_text import LimeTextExplainer
 
 # Load models and vectorizer
 LR = joblib.load("lr_model.pkl")
 DT = joblib.load('dt_model.pkl')
 GB = joblib.load('gb_model.pkl')
-RF = joblib.load("rf_model_compressed.pkl")  # <-- Updated model name
+RF = joblib.load("rf_model_compressed.pkl")  # Updated name
 vectorizer = joblib.load('vectorizer.pkl')
 
-# Preprocessing
+# Text preprocessing
 def wordopt(text):
     text = text.lower()
     text = re.sub('$.*?$', '', text)
@@ -54,18 +57,31 @@ if st.button("Predict"):
         
         # SHAP Explanation
         if st.checkbox("Show SHAP Explanation (Logistic Regression)"):
-            explainer = shap.LinearExplainer(LR, vectorizer.transform([user_input]), feature_perturbation="interventional")
-            shap_values = explainer.shap_values(vectorizer.transform([user_input]))
-            st.write("### SHAP Explanation (Logistic Regression)")
-            shap.plots.text(shap.Explanation(values=shap_values, data=[user_input], feature_names=vectorizer.get_feature_names_out()))
-        
+            st.write("### SHAP Summary Plot")
+            clean_text = wordopt(user_input)
+            vector_input = vectorizer.transform([clean_text])
+
+            explainer = shap.LinearExplainer(LR, vectorizer.transform(["sample"]), feature_perturbation="interventional")
+            shap_values = explainer.shap_values(vector_input)
+
+            # Convert to dense array
+            input_array = vector_input.toarray()
+
+            # SHAP Summary Plot
+            fig = plt.figure()
+            shap.summary_plot(shap_values, input_array, feature_names=vectorizer.get_feature_names_out(), show=False)
+            st.pyplot(fig)
+
         # LIME Explanation
         if st.checkbox("Show LIME Explanation (Logistic Regression)"):
-            from lime.lime_text import LimeTextExplainer
+            st.write("### LIME Text Explanation")
             lime_explainer = LimeTextExplainer(class_names=["Fake", "Not Fake"])
-            lime_exp = lime_explainer.explain_instance(user_input, lambda x: LR.predict_proba(vectorizer.transform(x)), num_features=10)
-            st.write("### LIME Explanation (Logistic Regression)")
-            st.components.v1.html(lime_exp.as_html(), height=600, scrolling=True)
+            lime_exp = lime_explainer.explain_instance(
+                user_input,
+                lambda x: LR.predict_proba(vectorizer.transform([wordopt(i) for i in x])),
+                num_features=10
+            )
+            components.html(lime_exp.as_html(), height=600, scrolling=True)
 
 # Visualization (optional static confusion matrix example)
 if st.checkbox("Show Example Confusion Matrix"):
