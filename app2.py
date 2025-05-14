@@ -70,8 +70,7 @@ if st.button("Predict"):
         # LIME Explanation using matplotlib
         if st.checkbox("Show LIME Explanation (Matplotlib)"):
             st.subheader("LIME Explanation (Bar Chart)")
-            lime_explainer = LimeTextExplainer(class_names=["Fake", "Not Fake"])
-            lime_exp = lime_explainer.explain_instance(
+            lime_explainer = LimeTextExplainer(class_names=["Fake", "Not Fake"])            lime_exp = lime_explainer.explain_instance(
                 user_input,
                 lambda x: LR.predict_proba(vectorizer.transform([wordopt(i) for i in x])),
                 num_features=10
@@ -80,13 +79,4 @@ if st.button("Predict"):
             fig = lime_exp.as_pyplot_figure()
             st.pyplot(fig)
 
-# Confusion Matrix Example
-if st.checkbox("Show Example Confusion Matrix"):
-    y_true = [0, 1, 0, 1, 1, 0]
-    y_pred = [0, 1, 1, 1, 1, 0]
-    cm = confusion_matrix(y_true, y_pred)
-    fig, ax = plt.subplots()
-    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["Fake", "Real"], yticklabels=["Fake", "Real"])
-    plt.xlabel("Predicted")
-    plt.ylabel("Actual")
-    st.pyplot(fig)
+
